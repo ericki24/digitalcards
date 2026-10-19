@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ profile.first_name }} {{ profile.last_name }} - Perfil Profesional</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Leaflet CSS (Mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Poppins:wght@400;600&family=Roboto:wght@400;700&display=swap');
+    body {
+      font-family: '{{ design.font_family }}', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col {{ design.font_weight }} {{ design.text_alignment }}" 
+      style="background-color: {{ design.bg_color }}; color: {{ design.text_color }}; {% if design.general_bg_image %}background-image: url('{{ design.general_bg_image.url }}'); background-size: cover; background-position: center;{% endif %}">
+
+  <!-- CONTENEDOR PRINCIPAL QUE VALIDA EL ESTADO -->
+  <div id="profile-container" class="flex flex-col min-h-screen">
+
+    <!-- ENCABEZADO DINÁMICO -->
+    <header class="w-full border-b relative shadow-sm" 
+            style="background-color: {{ design.header_color }}; border-color: {{ design.border_color }}; color: {{ design.text_color }}; {% if design.header_bg_image %}background-image: url('{{ design.header_bg_image.url }}'); background-size: cover; background-position: center;{% endif %}">
+      
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 {{ design.header_height }}">
+
+
+
+        <a 
+        href="{% url 'home' %}" 
+        class="fixed bottom-6 left-6 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-bold text-slate-700 bg-white/90 hover:bg-white hover:text-slate-900 border border-slate-200/80 transition-all shadow-xl shadow-slate-950/10 backdrop-blur-md"
+        >
+        <i data-lucide="arrow-left" class="w-4 h-4 text-slate-500"></i>
+        <span>Volver a inicio</span>
+        </a>        
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+          
+          <!-- Foto / Avatar con borde personalizado -->
+          <div class="relative group">
+            {% if profile.avatar %}
+              <img 
+                src="{{ profile.avatar.url }}" 
+                alt="{{ profile.first_name }} {{ profile.last_name }}" 
+                class="{{ design.avatar_size }} {{ design.avatar_shape }} object-cover {{ design.avatar_border_width }} shadow-xl"
+                style="border-color: {{ design.avatar_border_color }};"
+              />
+            {% else %}
+              <div class="{{ design.avatar_size }} {{ design.avatar_shape }} object-cover {{ design.avatar_border_width }} shadow-xl flex items-center justify-center text-3xl font-bold"
+                   style="background-color: {{ design.card_bg_color }}; color: {{ design.button_color }}; border-color: {{ design.avatar_border_color }};">
+                {{ profile.first_name.0 }}{{ profile.last_name.0 }}
+              </div>
+            {% endif %}
+            <span id="status-dot" class="absolute bottom-2 right-2 w-4 h-4 {% if is_active %}bg-emerald-500{% else %}bg-amber-500{% endif %} border-2 rounded-full" style="border-color: {{ design.header_color }};"></span>
+          </div>
+
+          <!-- Info principal -->
+          <div class="text-center md:text-left flex-1">
+            <div id="status-badge" class="inline-flex items-center gap-2 px-3 py-1 {{ design.badge_shape }} text-xs font-medium mb-3 border"
+                 style="background-color: {{ design.badge_color }}; border-color: {{ design.border_color }};">
+              <span class="w-1.5 h-1.5 rounded-full {% if is_active %}bg-emerald-400 animate-pulse{% else %}bg-amber-400{% endif %}"></span>
+              {% if is_active %}Perfil Activo / Disponible{% else %}Perfil Básico / En Pausa{% endif %}
+            </div>
+            
+
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight" 
+                style="color: {% if design.theme == 'dark' or design.theme == 'professional' or design.theme == 'colorful' %}#ffffff{% elif design.theme == 'light' %}#0f172a{% elif design.theme == 'minimal' %}#171717{% else %}{{ design.title_color }}{% endif %};">
+              {{ profile.first_name }} {{ profile.last_name }}
+            </h1>
+            
+
+            {% if is_active and profile.profession %}
+            <p class="text-lg font-medium mt-1" style="color: {{ design.secondary_text_color }};">{{ profile.profession }}</p>
+            {% endif %}
+            
+            {% if is_active %}
+            <p class="text-sm mt-1 flex items-center justify-center md:justify-start gap-1.5 flex-wrap" style="color: {{ design.secondary_text_color }};">
+              {% if profile.current_position %}
+              <span class="font-medium" style="color: {{ design.link_color }};">{{ profile.current_position }}</span>
+              {% endif %}
+              {% if profile.current_position and profile.company %}
+              <span>•</span>
+              {% endif %}
+              {% if profile.company %}
+              <i data-lucide="building-2" class="w-4 h-4"></i> {{ profile.company }}
+              {% endif %}
+              {% if profile.company and profile.address or profile.current_position and profile.address %}
+              <span class="mx-1.5">•</span>
+              {% endif %}
+              {% if profile.address %}
+              <i data-lucide="map-pin" class="w-4 h-4"></i> {{ profile.address }}
+              {% endif %}
+            </p>
+            {% endif %}
+
+            <!-- Botones de Acción Rápida (WhatsApp conectado al sistema de métricas) -->
+            <div id="action-buttons" class="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
+              {% if is_active %}
+                {% if profile.whatsapp_number %}
+                <a 
+                  href="{% url 'track_whatsapp' user_obj.username %}" 
+                  target="_blank"
+                  class="inline-flex items-center gap-2 {{ design.button_border_radius }} {{ design.button_size }} font-medium transition-colors shadow-sm
+                  {% if design.button_style == 'outline' %} border bg-transparent {% elif design.button_style == 'transparent' %} bg-opacity-20 {% else %} text-white {% endif %}"
+                  style="{% if design.button_style == 'outline' %}border-color: {{ design.button_color }}; color: {{ design.button_color }};{% elif design.button_style == 'transparent' %}background-color: transparent; border: 1px solid {{ design.button_color }}; color: {{ design.text_color }};{% else %}background-color: {{ design.button_color }};{% endif %}"
+                >
+                  <i data-lucide="message-circle" class="w-4 h-4"></i>
+                  WhatsApp Directo
+                </a>
+                {% endif %}
+
+                <a 
+                  href="{% url 'download_vcard' user_obj.username %}"
+                  class="inline-flex items-center gap-2 {{ design.button_border_radius }} {{ design.button_size }} border font-medium transition-colors"
+                  style="background-color: {{ design.card_bg_color }}; border-color: {{ design.border_color }}; color: {{ design.text_color }};"
+                >
+                  <i data-lucide="download" class="w-4 h-4" style="color: {{ design.link_color }};"></i>
+                  Guardar Contacto (.vcf)
+                </a>
+              {% else %}
+                <span class="inline-flex items-center gap-2 text-xs px-4 py-2 {{ design.button_border_radius }} border" style="background-color: {{ design.card_bg_color }}; border-color: {{ design.border_color }};">
+                  <i data-lucide="info" class="w-4 h-4 text-amber-400"></i> Este perfil se encuentra mostrando su versión básica.
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL / BENTO GRID -->
+    <main class="flex-1 {{ design.content_max_width }} w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      
+      <div class="grid grid-cols-1 {% if design.layout_columns == 'grid-cols-1 md:grid-cols-3' %}md:grid-cols-3{% endif %} {{ design.column_gap }}">
+        
+        {% if is_active %}
+          <!-- ========================================== -->
+          <!-- VISTA PREMIUM / ACTIVA -->
+          <!-- ========================================== -->
+          <div class="{% if design.layout_columns == 'grid-cols-1 md:grid-cols-3' %}md:col-span-2{% endif %} space-y-6">
+            
+            <!-- Acerca de mí -->
+            {% if profile.about_me %}
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border
+                      {% if design.card_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.card_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-3" style="color: {{ design.title_color }};">
+                <i data-lucide="user" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Acerca de mí</h2>
+              </div>
+              <p class="leading-relaxed text-sm md:text-base" style="color: {{ design.secondary_text_color }};">
+                {{ profile.about_me }}
+              </p>
+            </section>
+            {% endif %}
+
+            <!-- Experiencia Profesional -->
+            {% if profile.experiences.all %}
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border
+                      {% if design.card_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.card_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-4" style="color: {{ design.title_color }};">
+                <i data-lucide="briefcase" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Experiencia Profesional</h2>
+              </div>
+              <div class="space-y-4">
+                {% for exp in profile.experiences.all %}
+                <div class="border-l-2 pl-4 py-1" style="border-color: {{ design.button_color }};">
+                  <h3 class="font-semibold" style="color: {{ design.title_color }};">{{ exp.position }}</h3>
+                  <p class="text-sm" style="color: {{ design.secondary_text_color }};">{{ exp.company }}</p>
+                  <p class="text-xs mt-0.5 opacity-75" style="color: {{ design.secondary_text_color }};">
+                    {{ exp.start_date|date:"M Y" }} - {% if exp.is_current %}Presente{% else %}{{ exp.end_date|date:"M Y" }}{% endif %}
+                  </p>
+                </div>
+                {% endfor %}
+              </div>
+            </section>
+            {% endif %}
+
+            <!-- Ubicación y Mapa -->
+            {% if profile.latitude and profile.longitude %}
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border flex flex-col justify-between
+                      {% if design.card_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.card_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2 font-semibold text-lg" style="color: {{ design.title_color }};">
+                    <i data-lucide="map" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                    <h2>Ubicación</h2>
+                  </div>
+                  <span class="text-xs" style="color: {{ design.secondary_text_color }};">{{ profile.address|default:"" }}</span>
+                </div>
+                <div id="map" class="w-full h-48 rounded-xl border z-0" style="border-color: {{ design.border_color }};"></div>
+              </div>
+              <div class="mt-4 pt-3 border-t flex justify-between items-center text-xs" style="border-color: {{ design.border_color }}; color: {{ design.secondary_text_color }};">
+                <span>Coordenadas: {{ profile.latitude }}, {{ profile.longitude }}</span>
+                <a href="https://maps.google.com/?q={{ profile.latitude }},{{ profile.longitude }}" target="_blank" class="font-medium inline-flex items-center gap-1" style="color: {{ design.link_color }};">
+                  Abrir en Maps <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
+              </div>
+            </section>
+            {% endif %}
+
+            <!-- Intereses & Hobbies -->
+            {% if hobbies_list %}
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border
+                      {% if design.card_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.card_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-4" style="color: {{ design.title_color }};">
+                <i data-lucide="heart" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Intereses &amp; Hobbies</h2>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {% for hobby in hobbies_list %}
+                <span class="px-3 py-1.5 {{ design.badge_shape }} text-xs md:text-sm font-medium border" style="background-color: {{ design.badge_color }}; border-color: {{ design.border_color }}; color: {{ design.text_color }};">{{ hobby }}</span>
+                {% endfor %}
+              </div>
+            </section>
+            {% endif %}
+
+          </div>
+
+          <!-- COLUMNA DERECHA PREMIUM -->
+          <div class="space-y-6">
+            
+            <!-- Contacto Directo Completo -->
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border
+                      {% if design.card_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.card_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-4" style="color: {{ design.title_color }};">
+                <i data-lucide="phone-call" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Contacto Directo</h2>
+              </div>
+              <ul class="space-y-4 text-sm">
+                {% if profile.primary_phone %}
+                <li>
+                  <span class="text-xs font-medium block mb-0.5" style="color: {{ design.secondary_text_color }};">Teléfono principal</span>
+                  <a href="tel:{{ profile.primary_phone }}" class="font-medium flex items-center gap-2" style="color: {{ design.text_color }};">
+                    <i data-lucide="phone" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ profile.primary_phone }}
+                  </a>
+                </li>
+                {% endif %}
+                
+                {% if profile.secondary_phone %}
+                <li>
+                  <span class="text-xs font-medium block mb-0.5" style="color: {{ design.secondary_text_color }};">Teléfono secundario</span>
+                  <a href="tel:{{ profile.secondary_phone }}" class="font-medium flex items-center gap-2" style="color: {{ design.text_color }};">
+                    <i data-lucide="phone" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ profile.secondary_phone }}
+                  </a>
+                </li>
+                {% endif %}
+
+                {% if profile.primary_email %}
+                <li>
+                  <span class="text-xs font-medium block mb-0.5" style="color: {{ design.secondary_text_color }};">Correo electrónico principal</span>
+                  <a href="mailto:{{ profile.primary_email }}" class="font-medium flex items-center gap-2 truncate" style="color: {{ design.text_color }};">
+                    <i data-lucide="mail" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ profile.primary_email }}
+                  </a>
+                </li>
+                {% endif %}
+
+                {% if profile.secondary_email %}
+                <li>
+                  <span class="text-xs font-medium block mb-0.5" style="color: {{ design.secondary_text_color }};">Correo electrónico secundario</span>
+                  <a href="mailto:{{ profile.secondary_email }}" class="font-medium flex items-center gap-2 truncate" style="color: {{ design.text_color }};">
+                    <i data-lucide="mail" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ profile.secondary_email }}
+                  </a>
+                </li>
+                {% endif %}
+
+                {% if profile.website %}
+                <li>
+                  <span class="text-xs font-medium block mb-0.5" style="color: {{ design.secondary_text_color }};">Sitio Web</span>
+                  <a href="{{ profile.website }}" target="_blank" class="font-medium flex items-center gap-2 truncate" style="color: {{ design.text_color }};">
+                    <i data-lucide="globe" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ profile.website }}
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </section>
+
+            <!-- Presencia Digital (Redes Sociales) -->
+            {% if profile.social_links.all %}
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border
+                      {% if design.card_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.card_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-4" style="color: {{ design.title_color }};">
+                <i data-lucide="share-2" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Presencia Digital</h2>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                {% for link in profile.social_links.all %}
+                <a href="{{ link.url }}" target="_blank" class="flex items-center gap-2.5 p-2.5 {{ design.button_border_radius }} border text-xs font-medium truncate transition-colors" style="background-color: {{ design.bg_color }}; border-color: {{ design.border_color }}; color: {{ design.text_color }};">
+                  <i data-lucide="external-link" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ link.get_platform_display }}
+                </a>
+                {% endfor %}
+              </div>
+            </section>
+            {% endif %}
+
+            <!-- Código QR Dinámico -->
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border flex flex-col items-center justify-center text-center
+                      {% if design.qr_container_style == 'bordered' %}border-2{% endif %}" 
+                      style="background-color: {{ design.card_bg_color }}; border-color: {% if design.qr_container_style == 'bordered' %}{{ design.button_color }}{% else %}{{ design.border_color }}{% endif %};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-4 w-full justify-start" style="color: {{ design.title_color }};">
+                <i data-lucide="qr-code" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Visítanos en la Web</h2>
+              </div>
+              <div id="qrcode" class="p-3 border rounded-xl shadow-inner mb-3" style="background-color: #ffffff; border-color: {{ design.border_color }};"></div>
+              <p class="text-xs" style="color: {{ design.secondary_text_color }};">Escanea para compartir este perfil</p>
+            </section>
+
+          </div>
+
+        {% else %}
+          <!-- ========================================== -->
+          <!-- VISTA BÁSICA / INACTIVA -->
+          <!-- ========================================== -->
+          <div class="md:col-span-2 space-y-6">
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border" style="background-color: {{ design.card_bg_color }}; border-color: {{ design.border_color }};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-3" style="color: {{ design.title_color }};">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-amber-500"></i>
+                <h2>Información del Perfil</h2>
+              </div>
+              <p class="leading-relaxed text-sm md:text-base" style="color: {{ design.secondary_text_color }};">
+                Actualmente este perfil digital se encuentra en su modalidad estándar. Los detalles avanzados, ubicación interactiva y redes sociales están reservados para la versión activa.
+              </p>
+            </section>
+          </div>
+
+          <div class="space-y-6">
+            <section class="{{ design.card_border_radius }} {{ design.card_shadow }} {{ design.card_padding }} border" style="background-color: {{ design.card_bg_color }}; border-color: {{ design.border_color }};">
+              <div class="flex items-center gap-2 font-semibold text-lg mb-4" style="color: {{ design.title_color }};">
+                <i data-lucide="mail" class="w-5 h-5" style="color: {{ design.link_color }};"></i>
+                <h2>Contacto Principal</h2>
+              </div>
+              <ul class="space-y-4 text-sm">
+                {% if profile.primary_email %}
+                <li>
+                  <span class="text-xs font-medium block mb-0.5" style="color: {{ design.secondary_text_color }};">Correo electrónico</span>
+                  <a href="mailto:{{ profile.primary_email }}" class="font-medium flex items-center gap-2 truncate" style="color: {{ design.text_color }};">
+                    <i data-lucide="mail" class="w-4 h-4" style="color: {{ design.link_color }};"></i> {{ profile.primary_email }}
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </section>
+          </div>
+        {% endif %}
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- PIE DE PÁGINA -->
+  <footer class="w-full border-t py-6 mt-8 text-center text-xs" style="background-color: {{ design.card_bg_color }}; border-color: {{ design.border_color }}; color: {{ design.secondary_text_color }};">
+    <div class="max-w-6xl mx-auto px-4">
+      © 2026 {{ profile.first_name }} {{ profile.last_name }} • Perfil Profesional Digital
+    </div>
+  </footer>
+
+  <!-- SCRIPTS DE INICIALIZACIÓN -->
+  <script>
+    lucide.createIcons();
+
+    {% if is_active and profile.latitude and profile.longitude %}
+    const lat = {{ profile.latitude }};
+    const lng = {{ profile.longitude }};
+    const map = L.map('map', { zoomControl: false }).setView([lat, lng], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; CartoDB & OpenStreetMap'
+    }).addTo(map);
+    L.marker([lat, lng]).addTo(map).bindPopup('<b>{{ profile.company|default:profile.first_name }}</b>').openPopup();
+    {% endif %}
+
+    {% if is_active %}
+    new QRCode(document.getElementById("qrcode"), {
+      text: "{{ profile_url }}",
+      width: 140,
+      height: 140,
+      colorDark : "{{ design.title_color }}",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+    {% endif %}
+  </script>
+
+</body>
+</html>

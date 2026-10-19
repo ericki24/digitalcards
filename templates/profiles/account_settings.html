@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración de Cuenta - ProfileSaaS</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Estilos estandarizados para campos de formulario de Django */
+    form p { margin-bottom: 1rem; display: flex; flex-direction: column; text-align: left; }
+    form label { font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    form input { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem 1rem; color: #0f172a; font-size: 0.875rem; outline: none; transition: all 0.2s; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+    form input:focus { border-color: #6366f1; ring: 2px solid rgb(99 102 241 / 0.2); }
+    form ul { font-size: 0.75rem; color: #ef4444; list-style-type: disc; padding-left: 1rem; margin-top: 0.25rem; }
+    form .helptext { font-size: 0.7rem; color: #64748b; margin-top: 0.25rem; line-height: 1.25; }
+  </style>
+</head>
+<body class="bg-slate-200 text-slate-800 min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-10 antialiased">
+
+  <!-- CONTENEDOR PRINCIPAL FLOTANTE DE BORDES MUY REDONDEADOS -->
+  <div class="max-w-5xl w-full bg-slate-50 rounded-[2.5rem] shadow-2xl border border-slate-300/60 p-4 sm:p-6 md:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center relative">
+
+    <!-- SECCIÓN IZQUIERDA: FORMULARIOS DE CONFIGURACIÓN Y CIERRE (7 COLUMNAS) -->
+    <div class="md:col-span-7 px-2 sm:px-6 py-4 flex flex-col justify-between h-full space-y-6">
+
+      <!-- Botón Volver al Panel -->
+      <div>
+        <a href="{% url 'home' %}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200/80 shadow-xs transition-all">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5 text-slate-500"></i>
+          <span>Volver al Panel</span>
+        </a>
+      </div>
+
+      <div class="max-w-md w-full mx-auto space-y-6">
+        
+        <!-- Encabezado -->
+        <div class="space-y-1 text-center md:text-left">
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Configuración de Cuenta</h1>
+          <p class="text-xs text-slate-500">Actualiza tus datos de acceso, protege tu cuenta o gestiónala</p>
+        </div>
+
+        <!-- NOTIFICACIONES Y MENSAJES DE ÉXITO / ERROR -->
+        {% if messages %}
+          <div class="space-y-2">
+            {% for message in messages %}
+              <div class="p-3.5 rounded-2xl text-xs font-semibold border flex items-center gap-3 shadow-xs
+                {% if message.tags == 'success' %}
+                  bg-emerald-50 border-emerald-200 text-emerald-800
+                {% else %}
+                  bg-rose-50 border-rose-200 text-rose-800
+                {% endif %}">
+                <i data-lucide="{% if message.tags == 'success' %}check-circle-2{% else %}alert-circle{% endif %}" class="w-4 h-4 shrink-0"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- SECCIÓN 1: DATOS PRINCIPALES -->
+        <div class="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs space-y-4">
+          <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+              <i data-lucide="user" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">Datos Principales</h2>
+              <p class="text-[11px] text-slate-500">Nombre de usuario y correo único</p>
+            </div>
+          </div>
+
+          <form method="POST" class="space-y-3">
+            {% csrf_token %}
+            {{ user_form.as_p }}
+
+            <button type="submit" name="update_profile_info" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 px-4 rounded-2xl text-xs transition-all shadow-sm">
+              Guardar Datos de Acceso
+            </button>
+          </form>
+        </div>
+
+        <!-- SECCIÓN 2: SEGURIDAD Y CONTRASEÑA -->
+        <div class="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-xs space-y-4">
+          <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <i data-lucide="key-round" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">Seguridad de la Cuenta</h2>
+              <p class="text-[11px] text-slate-500">Actualiza tu contraseña de acceso</p>
+            </div>
+          </div>
+
+          <form method="POST" class="space-y-3">
+            {% csrf_token %}
+            {{ password_form.as_p }}
+
+            <button type="submit" name="change_password" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-2xl text-xs transition-all shadow-sm">
+              Actualizar Contraseña
+            </button>
+          </form>
+        </div>
+
+        <!-- SECCIÓN 3: ZONA DE PELIGRO (CERRAR / ELIMINAR CUENTA) -->
+        <div class="bg-white border border-rose-200 p-5 rounded-2xl shadow-xs space-y-4">
+          <div class="flex items-center gap-3 pb-3 border-b border-rose-100">
+            <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-rose-900">Zona de Peligro</h2>
+              <p class="text-[11px] text-rose-500">Elimina tu cuenta y datos permanentemente</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Al cerrar tu cuenta, se borrarán de forma permanente tu tarjeta digital, configuraciones, analíticas y datos asociados. Esta acción no se puede deshacer.
+          </p>
+
+          <form action="{% url 'close_account' %}" method="POST" onsubmit="return confirm('¿Estás completamente seguro de que deseas eliminar tu cuenta? Esta acción es irreversible.');">
+            {% csrf_token %}
+            <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-3 px-4 rounded-2xl text-xs transition-all shadow-sm">
+              Cerrar y Eliminar mi Cuenta
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Pie de página discreto -->
+      <div class="text-center text-[11px] text-slate-400 pt-2">
+        © 2026 Plataforma de Tarjetas Digitales
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN DERECHA: BANNER VISUAL CON GRADIENTE (5 COLUMNAS) -->
+    <div class="hidden md:flex md:col-span-5 h-full min-h-[750px] rounded-[2rem] overflow-hidden relative bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-8 flex-col justify-between shadow-inner">
+      
+      <!-- Fondo decorativo abstracto con luz soft -->
+      <div class="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Header del Banner -->
+      <div class="relative z-10 flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-teal-300"></i>
+        </div>
+        <span class="text-xs font-bold tracking-wider uppercase text-slate-300">ProfileSaaS Control</span>
+      </div>
+
+      <!-- Elemento Central -->
+      <div class="relative z-10 my-auto text-center space-y-4 py-8">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-white/10 backdrop-blur-lg border border-white/20 flex items-center justify-center shadow-xl">
+          <i data-lucide="user-cog" class="w-10 h-10 text-teal-300"></i>
+        </div>
+        <div class="space-y-2">
+          <h2 class="text-2xl font-extrabold tracking-tight text-white">Gestión total y segura.</h2>
+          <p class="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
+            Control absoluto sobre tus datos personales, unicidad garantizada en tus correos electrónicos y la libertad de cerrar tu cuenta cuando lo necesites.
+          </p>
+        </div>
+      </div>
+
+      <!-- Indicador Estilizado -->
+      <div class="relative z-10 flex items-center justify-between text-xs text-slate-400 border-t border-white/10 pt-4">
+        <span>Sistema listo para producción</span>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-white/30"></span>
+          <span class="w-2 h-2 rounded-full bg-white/30"></span>
+          <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

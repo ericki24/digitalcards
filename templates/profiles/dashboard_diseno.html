@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Diseño - Personalización Visual</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;600&family=Poppins:wght@400;600&family=Roboto:wght@400;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    /* Estilos estandarizados para que los campos de Django se adapten fluidamente a las columnas */
+    form input, form select, form textarea {
+      width: 100%;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.875rem;
+      color: #0f172a;
+      font-size: 0.875rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    form input:focus, form select:focus, form textarea:focus {
+      border-color: #0d9488;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+  <header class="w-full bg-slate-900 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <i data-lucide="palette" class="w-6 h-6 text-teal-400"></i>
+        <h1 class="text-xl font-bold tracking-tight">Panel de Control - Diseño Visual</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <a 
+          href="{% url 'home' %}" 
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-sm"
+        >
+          <i data-lucide="arrow-left" class="w-4 h-4 text-slate-500"></i>
+          <span>Volver a inicio</span>
+        </a>
+        <a href="{% url 'dashboard' %}" class="hidden sm:inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-sm font-medium border border-slate-700">
+          <i data-lucide="user-pen" class="w-4 h-4"></i> Editar Información
+        </a>
+        <a href="{% url 'public_profile' request.user.username %}" target="_blank" class="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm">
+          <i data-lucide="external-link" class="w-4 h-4"></i> Ver Tarjeta
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL A DOS COLUMNAS -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- NOTIFICACIONES Y MENSAJES DE ÉXITO -->
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="p-4 rounded-2xl text-xs font-semibold border flex items-center justify-between shadow-xs transition-all
+            {% if message.tags == 'success' %}
+              bg-emerald-50 border-emerald-200 text-emerald-800
+            {% else %}
+              bg-rose-50 border-rose-200 text-rose-800
+            {% endif %}">
+            <div class="flex items-center gap-3">
+              <i data-lucide="{% if message.tags == 'success' %}check-circle-2{% else %}alert-circle{% endif %}" class="w-5 h-5 shrink-0"></i>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- FORMULARIO DE DISEÑO -->
+    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {% csrf_token %}
+
+      <!-- COLUMNA PRINCIPAL DE CONFIGURACIÓN (8 COLUMNAS) -->
+      <div class="lg:col-span-8 space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 md:p-8 space-y-6">
+          <div class="pb-4 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900">Personalización Completa del Diseño</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Configura todas las opciones de estilo y apariencia visual de tu tarjeta.</p>
+            </div>
+            <span class="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-xs font-semibold">
+              @{{ request.user.username }}
+            </span>
+          </div>
+
+          {% if form.errors %}
+          <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            <strong>Por favor corrige los errores en el formulario:</strong>
+            {{ form.errors }}
+          </div>
+          {% endif %}
+
+          <!-- Renderizado en cuadrícula de 2 columnas dentro de la tarjeta -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {% for field in form %}
+              <div class="space-y-1.5 {% if field.field.widget.input_type == 'file' or field.name == 'theme' or field.name == 'font_family' %}md:col-span-2{% endif %}">
+                <label class="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+                  {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                  <p class="text-[10px] text-slate-400">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                  <p class="text-xs text-rose-600">{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA LATERAL DE ACCIONES (4 COLUMNAS) -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-5 sticky top-24">
+          <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+            <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <i data-lucide="sliders" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">Acciones de Estilo</h3>
+              <p class="text-[11px] text-slate-500">Guarda o restablece tus preferencias</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Los cambios visuales se aplicarán de inmediato a tu tarjeta digital pública para que tus visitantes disfruten de una experiencia única.
+          </p>
+
+          <div class="space-y-3 pt-2">
+            <button type="submit" class="w-full inline-flex justify-center items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3.5 rounded-2xl font-semibold text-sm transition-all shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i> Guardar Cambios de Diseño
+            </button>
+
+            <a href="{% url 'dashboard_diseno_reset' %}" onclick="return confirm('¿Estás seguro de restablecer el diseño a los valores por defecto?');" class="w-full text-center inline-flex justify-center items-center gap-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-4 py-3 rounded-2xl font-semibold text-xs transition-colors border border-slate-200">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restablecer Diseño Original
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </form>
+
+  </main>
+
+  <footer class="w-full bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400">
+    © 2026 Plataforma de Tarjetas Digitales
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

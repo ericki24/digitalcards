@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Control - Editar Perfil</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Estilos estandarizados para que los campos de Django se adapten perfectamente a las columnas */
+    form input, form select, form textarea {
+      width: 100%;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.875rem;
+      color: #0f172a;
+      font-size: 0.875rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    form input:focus, form select:focus, form textarea:focus {
+      border-color: #0d9488;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+    form textarea { min-height: 90px; resize: vertical; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+  <header class="w-full bg-slate-900 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <i data-lucide="layout-dashboard" class="w-6 h-6 text-teal-400"></i>
+        <h1 class="text-xl font-bold tracking-tight">Panel de Control (SaaS)</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <a 
+          href="{% url 'home' %}" 
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-all shadow-sm"
+        >
+          <i data-lucide="arrow-left" class="w-4 h-4 text-slate-500"></i>
+          <span>Volver a inicio</span>
+        </a>
+        <a href="{% url 'dashboard_diseno' %}" class="hidden sm:inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-sm font-medium border border-slate-700">
+          <i data-lucide="user-pen" class="w-4 h-4"></i> Personalizar Estilo
+        </a>
+        <a href="{% url 'public_profile' request.user.username %}" target="_blank" class="inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm">
+          <i data-lucide="external-link" class="w-4 h-4"></i> Ver Tarjeta
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL A DOS COLUMNAS -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- NOTIFICACIONES Y MENSAJES DE ÉXITO -->
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="p-4 rounded-2xl text-xs font-semibold border flex items-center justify-between shadow-xs transition-all
+            {% if message.tags == 'success' %}
+              bg-emerald-50 border-emerald-200 text-emerald-800
+            {% else %}
+              bg-rose-50 border-rose-200 text-rose-800
+            {% endif %}">
+            <div class="flex items-center gap-3">
+              <i data-lucide="{% if message.tags == 'success' %}check-circle-2{% else %}alert-circle{% endif %}" class="w-5 h-5 shrink-0"></i>
+              <span>{{ message }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- FORMULARIO GENERAL CON ESTRUCTURA DE 2 COLUMNAS -->
+    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {% csrf_token %}
+
+      <!-- COLUMNA IZQUIERDA: INFORMACIÓN PERSONAL Y CONTACTO (7 COLUMNAS) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 md:p-8 space-y-6">
+          <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900">Editar Información del Perfil</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Gestiona los atributos principales de tu tarjeta digital.</p>
+            </div>
+            <span class="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-xs font-semibold">
+              @{{ request.user.username }}
+            </span>
+          </div>
+
+          <!-- Errores generales -->
+          {% if form.errors or experience_formset.errors or social_formset.errors %}
+          <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            <strong>Por favor revisa los errores marcados en el formulario.</strong>
+          </div>
+          {% endif %}
+
+          <!-- Datos Personales -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="user" class="w-4 h-4 text-teal-600"></i> Datos Personales y Profesionales
+            </h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Nombres</label>
+                {{ form.first_name }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Apellidos</label>
+                {{ form.last_name }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Profesión</label>
+                {{ form.profession }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Empresa</label>
+                {{ form.company }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Puesto</label>
+                {{ form.current_position }}
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Acerca de mí (Biografía)</label>
+              {{ form.about_me }}
+            </div>
+          </div>
+
+          <!-- Contacto y Ubicación -->
+          <div class="space-y-4 pt-4 border-t border-slate-100">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-4 h-4 text-teal-600"></i> Contacto y Ubicación
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Correo Principal</label>
+                {{ form.primary_email }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Correo Secundario</label>
+                {{ form.secondary_email }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Teléfono 1</label>
+                {{ form.primary_phone }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Teléfono 2</label>
+                {{ form.secondary_phone }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">WhatsApp</label>
+                {{ form.whatsapp_number }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Sitio Web</label>
+                {{ form.website }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Dirección</label>
+                {{ form.address }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Latitud</label>
+                {{ form.latitude }}
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Longitud</label>
+                {{ form.longitude }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Intereses y Avatar -->
+          <div class="space-y-4 pt-4 border-t border-slate-100">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="heart" class="w-4 h-4 text-teal-600"></i> Multimedia e Intereses
+            </h3>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Hobbies (Separados por comas)</label>
+              {{ form.hobbies }}
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Fotografía de Perfil (Avatar)</label>
+              {{ form.avatar }}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- COLUMNA DERECHA: EXPERIENCIA, REDES Y BOTÓN DE GUARDAR (5 COLUMNAS) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- EXPERIENCIA PROFESIONAL (FORMSET) -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+            <i data-lucide="briefcase" class="w-4 h-4 text-teal-600"></i> Experiencia Profesional
+          </h3>
+          {{ experience_formset.management_form }}
+          <div class="space-y-3">
+            {% for exp_form in experience_formset %}
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                {% for hidden in exp_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 uppercase mb-0.5">Puesto</label>
+                    {{ exp_form.position }}
+                  </div>
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 uppercase mb-0.5">Empresa</label>
+                    {{ exp_form.company }}
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 uppercase mb-0.5">Inicio</label>
+                    {{ exp_form.start_date }}
+                  </div>
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 uppercase mb-0.5">Fin</label>
+                    {{ exp_form.end_date }}
+                  </div>
+                </div>
+                <div class="flex items-center justify-between pt-1 text-xs">
+                  <span class="flex items-center gap-1.5">{{ exp_form.is_current }} <span class="text-[10px] text-slate-500">¿Actual?</span></span>
+                  {% if experience_formset.can_delete %}
+                    <span class="text-rose-600 text-[10px] flex items-center gap-1">Eliminar: {{ exp_form.DELETE }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- REDES SOCIALES (FORMSET) -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+            <i data-lucide="share-2" class="w-4 h-4 text-teal-600"></i> Redes Sociales y Enlaces
+          </h3>
+          {{ social_formset.management_form }}
+          <div class="space-y-3">
+            {% for social_form in social_formset %}
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                {% for hidden in social_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div>
+                  <label class="block text-[9px] font-semibold text-slate-500 uppercase mb-0.5">Plataforma</label>
+                  {{ social_form.platform }}
+                </div>
+                <div>
+                  <label class="block text-[9px] font-semibold text-slate-500 uppercase mb-0.5">URL del Perfil</label>
+                  {{ social_form.url }}
+                </div>
+                {% if social_formset.can_delete %}
+                  <div class="flex items-center justify-end pt-1 text-[10px] text-rose-600 gap-1">
+                    Eliminar: {{ social_form.DELETE }}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- BOTÓN DE GUARDADO PRINCIPAL -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sticky bottom-4 z-40 backdrop-blur-md bg-white/90">
+          <button type="submit" class="w-full inline-flex justify-center items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white px-6 py-3.5 rounded-2xl font-semibold text-sm transition-all shadow-sm">
+            <i data-lucide="save" class="w-4 h-4"></i> Guardar Todos los Cambios
+          </button>
+        </div>
+
+      </div>
+
+    </form>
+
+  </main>
+
+  <footer class="w-full bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-400">
+    © 2026 Plataforma de Tarjetas Digitales
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
