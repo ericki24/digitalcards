@@ -157,16 +157,14 @@ STORAGES = {
 # CONFIGURACIÓN DE CORREO (SMTP / GMAIL)
 # ==========================================
 
-EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
 
 ANYMAIL = {
-    "RESEND_API_KEY": os.getenv("RESEND_API_KEY"),
+    "BREVO_API_KEY": os.getenv("BREVO_API_KEY"),
 }
 
-# Para pruebas iniciales puedes usar el correo por defecto de Resend, 
-# o tu propio correo una vez que verifiques un dominio en su plataforma.
-DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
-
+# Pon tu correo personal real con el que abriste la cuenta en Brevo
+DEFAULT_FROM_EMAIL = "ProfileSaaS <t1mendozapol@gmail.com>"
 # ==========================================
 # PASARELA DE PAGOS (STRIPE)
 # ==========================================
