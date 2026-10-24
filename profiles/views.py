@@ -97,7 +97,8 @@ def public_profile(request, username):
     is_active = subscription.check_status() if subscription else False
 
     hobbies_list = [h.strip() for h in profile.hobbies.split(',')] if profile.hobbies else []
-
+    is_owner = request.user.is_authenticated and request.user == user_obj
+    
     context = {
         'profile': profile,
         'user_obj': user_obj,
@@ -105,6 +106,7 @@ def public_profile(request, username):
         'hobbies_list': hobbies_list,
         'profile_url': request.build_absolute_uri(),
         'design': design,
+        'is_owner': is_owner,
     }
     return render(request, 'profiles/public_profile.html', context)
 
